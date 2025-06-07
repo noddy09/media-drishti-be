@@ -1,0 +1,22 @@
+venv/
+env/
+venv*
+env*
+*.py[cod]
+*.pyd
+.db
+*.pot
+*.po
+*.mo
+*.pyc
+*.pyo
+.DS_Store
+.cache
+*.log
+*.sqlite3
+*.sqlite3-journal
+__pycache__/
+*.swp
+*.orig
+*.bak
+# End Django specific ignore patterns
