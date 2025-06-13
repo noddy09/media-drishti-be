@@ -11,4 +11,7 @@ class UploadViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(uploaded_by=self.request.user)
+        # Save with user and user-provided name if present
+        name = self.request.data.get('name')
+        serializer.save(uploaded_by=self.request.user, name=name)
+
