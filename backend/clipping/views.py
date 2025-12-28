@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from .models import Clip
 from .serializers import ClipSerializer
 from backend.auditlog.models import AuditLog
@@ -36,3 +38,14 @@ class ClipViewSet(viewsets.ModelViewSet):
             description=f"Deleted clip for file '{instance.upload}'",
         )
         instance.delete()
+
+    @action(detail=False, methods=['post'])
+    def export_clips(self, request):
+        clips = self.get_queryset()
+        serializer = self.get_serializer(clips, many=True)
+        AuditLog.objects.create(
+            user=request.user,
+            action='download',
+            description="Exported clips data",
+        )
+        return Response(serializer.data)
