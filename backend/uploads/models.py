@@ -13,7 +13,8 @@ class Upload(models.Model):
         ext = filename.split('.')[-1]
         uuid_name = f"{uuid.uuid4()}.{ext}"
         now = datetime.now()
-        return os.path.join('uploads', str(now.year), str(now.month).zfill(2), uuid_name)
+        # Store files under MEDIA_ROOT/<year>/<month>/..., MEDIA_URL will prefix with '/uploads/'
+        return os.path.join(str(now.year), str(now.month).zfill(2), uuid_name)
 
     file = models.FileField(upload_to=upload_to_uuid)
     file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)

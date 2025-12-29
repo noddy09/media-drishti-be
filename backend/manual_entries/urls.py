@@ -1,7 +1,11 @@
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import ManualEntryViewSet
 
 router = DefaultRouter()
-router.register(r'manual-entries', ManualEntryViewSet, basename='manualentry')
+# Register at root so the app prefix provides the full path `/api/manual-entries/`
+router.register(r'', ManualEntryViewSet, basename='manualentry')
 
-urlpatterns = router.urls
+urlpatterns = [
+	path('', include(router.urls)),
+]

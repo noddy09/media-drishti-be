@@ -1,10 +1,11 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from backend.tagging.models import Tag
 
 class ManualEntry(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
-    tags = models.CharField(max_length=255, blank=True)  # Comma-separated tags for simplicity
+    tags = models.ManyToManyField(Tag, related_name='manual_entries', blank=True)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='manual_entries')
     created_at = models.DateTimeField(auto_now_add=True)
     tenant = models.CharField(max_length=100)
