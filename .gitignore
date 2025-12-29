@@ -1,6 +1,7 @@
 venv/
 env/
 venv*
+.venv*
 env*
 *.py[cod]
 *.pyd
