@@ -32,3 +32,8 @@ class ClipSerializer(serializers.ModelSerializer):
             tag, _ = Tag.objects.get_or_create(name=tag_name)
             ClipTag.objects.create(clip=clip, tag=tag)
         return clip
+
+    def export(self, instance):
+        data = super().to_representation(instance)
+        data['tags'] = TagSerializer([ct.tag for ct in instance.cliptag_set.all()], many=True).data
+        return data
