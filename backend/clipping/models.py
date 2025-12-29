@@ -9,6 +9,7 @@ class Clip(models.Model):
     y = models.FloatField()
     width = models.IntegerField()
     height = models.IntegerField()
+    page_number = models.IntegerField(default=1)
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='clips')
     created_at = models.DateTimeField(auto_now_add=True)
 

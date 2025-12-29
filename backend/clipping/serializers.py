@@ -11,8 +11,8 @@ class ClipSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_by', 'created_at')
 
     def validate(self, data):
-        # Ensure x, y, width, height are integers
-        for field in ['x', 'y', 'width', 'height']:
+        # Ensure x, y, width, height, page_number are numeric
+        for field in ['x', 'y', 'width', 'height', 'page_number']:
             if field in data and not isinstance(data[field], (int, float)):
                 try:
                     data[field] = int(data[field])
@@ -20,6 +20,9 @@ class ClipSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({field: 'A valid integer is required.'})
         # Remove tenant requirement
         data.pop('tenant', None)
+        # Ignore overlay fields if present from UI
+        data.pop('overlay_width', None)
+        data.pop('overlay_height', None)
         # Accept 'upload' as either pk or object
         if 'upload' not in data:
             raise serializers.ValidationError({'upload': 'This field is required.'})

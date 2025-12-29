@@ -11,3 +11,13 @@ class ClipTag(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='clip_tags')
     def __str__(self):
         return f"{self.clip} - {self.tag}"
+
+class ClientTag(models.Model):
+    client = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='client_tags', limit_choices_to={'is_staff': False, 'is_superuser': False})
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='client_tags')
+    
+    class Meta:
+        unique_together = ('client', 'tag')
+    
+    def __str__(self):
+        return f"{self.client.username} - {self.tag.name}"

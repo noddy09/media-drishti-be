@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tag, ClipTag
+from .models import Tag, ClipTag, ClientTag
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,4 +9,9 @@ class TagSerializer(serializers.ModelSerializer):
 class ClipTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClipTag
+        fields = '__all__'
+
+class ClientTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientTag
         fields = '__all__'

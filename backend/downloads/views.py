@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
 from django.http import FileResponse
+from rest_framework.exceptions import PermissionDenied
 import fitz
 import io
 
 from backend.clipping.models import Clip
+from backend.tagging.models import ClientTag
 from .models import Download
 from .serializers import DownloadSerializer
 
@@ -18,6 +20,16 @@ class DownloadViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         download = self.get_object()
         upload = download.upload
+        
+        # For clients, ensure the upload contains at least one clip tagged with a tag assigned to them
+        if not request.user.is_staff and not request.user.is_superuser:
+            allowed_tag_ids = set(ClientTag.objects.filter(client=request.user).values_list('tag_id', flat=True))
+            clip_tag_ids = set(
+                Clip.objects.filter(upload=upload).values_list('clip_tags__tag_id', flat=True).distinct()
+            )
+            if not (allowed_tag_ids and (clip_tag_ids & allowed_tag_ids)):
+                raise PermissionDenied("You do not have access to download this file.")
+        
         clips = Clip.objects.filter(upload=upload)
         
         pdf_path = upload.file.path

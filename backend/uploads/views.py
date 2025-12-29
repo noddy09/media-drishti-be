@@ -12,7 +12,7 @@ class UploadViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        if self.request.user.role != 'admin':
+        if not self.request.user.is_superuser:
             raise PermissionDenied("Only admins can upload files.")
         # Save with user and user-provided name if present
         name = self.request.data.get('name')

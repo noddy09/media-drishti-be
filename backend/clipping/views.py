@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from .models import Clip
 from .serializers import ClipSerializer
 from backend.auditlog.models import AuditLog
+from backend.tagging.models import ClientTag
 import fitz  # PyMuPDF
 import io
 from PIL import Image
@@ -54,30 +55,44 @@ class ClipViewSet(viewsets.ModelViewSet):
         else:
             clips = self.get_queryset()
         
+        # For clients, filter clips to only those with tags assigned to them
+        if not request.user.is_staff and not request.user.is_superuser:
+            allowed_tag_ids = ClientTag.objects.filter(client=request.user).values_list('tag_id', flat=True)
+            clips = clips.filter(clip_tags__tag_id__in=allowed_tag_ids).distinct()
+        
         # Create a new PDF document
         pdf_doc = fitz.open()
         
         for clip in clips:
             file_path = clip.upload.file.path
             if clip.upload.file_type == 'pdf':
-                # Open the original PDF
+                # Open the original PDF and select the correct page (1-based -> 0-based)
                 doc = fitz.open(file_path)
-                page = doc[0]  # Assume first page
-                
+                page_index = max(0, (clip.page_number or 1) - 1)
+                page = doc[page_index]
+
                 # Define the rectangle to crop (x, y, x+width, y+height)
-                rect = fitz.Rect(clip.x, clip.y, clip.x + clip.width, clip.y + clip.height)
-                
-                # Get the pixmap of the cropped area
-                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), clip=rect)  # Higher resolution
-                
+                x1 = int(round(clip.x))
+                y1 = int(round(clip.y))
+                x2 = int(round(clip.x + clip.width))
+                y2 = int(round(clip.y + clip.height))
+                rect = fitz.Rect(x1, y1, x2, y2)
+
+                # Get the pixmap of the cropped area at higher resolution
+                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), clip=rect)
+
                 # Convert pixmap to PIL Image
                 img = Image.open(io.BytesIO(pix.tobytes()))
-                
+
                 doc.close()
             else:
                 # For images, open with PIL and crop
                 img = Image.open(file_path)
-                img = img.crop((clip.x, clip.y, clip.x + clip.width, clip.y + clip.height))
+                x1 = int(round(clip.x))
+                y1 = int(round(clip.y))
+                x2 = int(round(clip.x + clip.width))
+                y2 = int(round(clip.y + clip.height))
+                img = img.crop((x1, y1, x2, y2))
             
             # Convert to bytes for inserting into PDF
             img_bytes = io.BytesIO()
