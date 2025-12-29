@@ -19,5 +19,5 @@ __pycache__/
 *.swp
 *.orig
 *.bak
-media-drishti-be/uploads/
+uploads/*
 # End Django specific ignore patterns
