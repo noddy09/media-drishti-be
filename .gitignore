@@ -21,4 +21,5 @@ __pycache__/
 *.orig
 *.bak
 uploads/*
+staticfiles/
 # End Django specific ignore patterns
