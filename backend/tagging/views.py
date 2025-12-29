@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
+from rest_framework.exceptions import PermissionDenied
 from .models import Tag, ClipTag
 from .serializers import TagSerializer, ClipTagSerializer
 from backend.auditlog.models import AuditLog
@@ -30,6 +31,8 @@ class TagViewSet(viewsets.ModelViewSet):
         )
 
     def perform_destroy(self, instance):
+        if self.request.user.role != 'admin':
+            raise PermissionDenied("Only admins can delete tags.")
         AuditLog.objects.create(
             user=self.request.user,
             action='tag',
