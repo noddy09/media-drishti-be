@@ -1,16 +1,15 @@
-from django.shortcuts import render
-from rest_framework import viewsets, permissions
-from django.http import FileResponse
-from rest_framework.exceptions import PermissionDenied
-import fitz
 import io
+import fitz
+from django.shortcuts import render
+from django.http import FileResponse
+from rest_framework import viewsets, permissions
+from rest_framework.exceptions import PermissionDenied
 
-from backend.clipping.models import Clip
-from backend.tagging.models import ClientTag
 from .models import Download
+from backend.clipping.models import Clip
 from .serializers import DownloadSerializer
+from backend.tagging.models import ClientTag
 
-# Create your views here.
 
 class DownloadViewSet(viewsets.ModelViewSet):
     queryset = Download.objects.all()
@@ -31,21 +30,34 @@ class DownloadViewSet(viewsets.ModelViewSet):
                 raise PermissionDenied("You do not have access to download this file.")
         
         clips = Clip.objects.filter(upload=upload)
-        
+
         pdf_path = upload.file.path
         doc = fitz.open(pdf_path)
         new_doc = fitz.open()
-        
+
+        zoom = 4.0  # Render clips at 4x scale for sharper output
+        matrix = fitz.Matrix(zoom, zoom)
+
         for clip in clips:
-            page = doc[0]  # Assuming single page PDF
+            page_index = max(0, (clip.page_number or 1) - 1)
+            page = doc[page_index]
+
+            # Define the clip rectangle using original PDF coordinates
             rect = fitz.Rect(clip.x, clip.y, clip.x + clip.width, clip.y + clip.height)
-            new_page = new_doc.new_page()
-            new_page.show_pdf_page(new_page.rect, doc, 0, clip=rect)
-        
+
+            # Render the clipped region at higher resolution and embed as an image
+            pix = page.get_pixmap(matrix=matrix, clip=rect, alpha=False)
+            img_bytes = pix.tobytes("png")
+
+            page_width = rect.width
+            page_height = rect.height
+            new_page = new_doc.new_page(width=page_width, height=page_height)
+            new_page.insert_image(new_page.rect, stream=img_bytes)
+
         output = io.BytesIO()
         new_doc.save(output)
         new_doc.close()
         doc.close()
         output.seek(0)
-        
+
         return FileResponse(output, as_attachment=True, filename='cropped_clips.pdf')
