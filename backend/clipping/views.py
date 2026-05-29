@@ -11,6 +11,7 @@ from backend.manual_entries.models import ManualEntry
 import fitz  # PyMuPDF
 import io
 from PIL import Image, ImageDraw, ImageFont
+from pdf2image import convert_from_path
 
 # Create your views here.
 
@@ -88,25 +89,27 @@ class ClipViewSet(viewsets.ModelViewSet):
         for clip in clips:
             file_path = clip.upload.file.path
             if clip.upload.file_type == 'pdf':
-                # Open the original PDF and select the correct page (1-based -> 0-based)
-                doc = fitz.open(file_path)
+                # Use high-resolution PDF rendering (1200 DPI for maximum sharpness)
+                DPI = 1200
+                pages_as_images = convert_from_path(file_path, dpi=DPI)
+                
                 page_index = max(0, (clip.page_number or 1) - 1)
-                page = doc[page_index]
-
-                # Define the rectangle to crop (x, y, x+width, y+height)
-                x1 = int(round(clip.x))
-                y1 = int(round(clip.y))
-                x2 = int(round(clip.x + clip.width))
-                y2 = int(round(clip.y + clip.height))
-                rect = fitz.Rect(x1, y1, x2, y2)
-
-                # Get the pixmap of the cropped area at higher resolution (3x for better quality)
-                pix = page.get_pixmap(matrix=fitz.Matrix(3, 3), clip=rect)
-
-                # Convert pixmap to PIL Image
-                img = Image.open(io.BytesIO(pix.tobytes()))
-
-                doc.close()
+                if page_index >= len(pages_as_images):
+                    continue
+                
+                page_image = pages_as_images[page_index]
+                
+                # PDF coordinates are in points (72 DPI), scale to our render DPI
+                scale_factor = DPI / 72
+                
+                # Calculate pixel coordinates
+                left = int(clip.x * scale_factor)
+                top = int(clip.y * scale_factor)
+                right = int((clip.x + clip.width) * scale_factor)
+                bottom = int((clip.y + clip.height) * scale_factor)
+                
+                # Crop the image
+                img = page_image.crop((left, top, right, bottom))
             else:
                 # For images, open with PIL and crop
                 img = Image.open(file_path)
@@ -167,9 +170,9 @@ class ClipViewSet(viewsets.ModelViewSet):
             )
             y_position += label_height
             
-            # Convert bordered image to bytes and insert centered with high DPI
+            # Convert bordered image to high-quality raster PNG at 1200 DPI
             img_bytes = io.BytesIO()
-            bordered_img.save(img_bytes, format='PNG', dpi=(300, 300))
+            bordered_img.save(img_bytes, format='PNG', dpi=(1200, 1200), quality=100, optimize=False)
             img_bytes.seek(0)
             
             x_centered = (page_width - bordered_width) / 2

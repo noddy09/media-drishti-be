@@ -1,5 +1,5 @@
 import io
-import fitz
+import fitz  # PyMuPDF for direct PDF cropping
 from django.shortcuts import render
 from django.http import FileResponse
 from rest_framework import viewsets, permissions
@@ -35,24 +35,24 @@ class DownloadViewSet(viewsets.ModelViewSet):
         doc = fitz.open(pdf_path)
         new_doc = fitz.open()
 
-        zoom = 4.0  # Render clips at 4x scale for sharper output
-        matrix = fitz.Matrix(zoom, zoom)
-
         for clip in clips:
             page_index = max(0, (clip.page_number or 1) - 1)
+            if page_index >= doc.page_count:
+                continue
+
             page = doc[page_index]
 
-            # Define the clip rectangle using original PDF coordinates
-            rect = fitz.Rect(clip.x, clip.y, clip.x + clip.width, clip.y + clip.height)
+            # Define clip rectangle using original PDF coordinates (points)
+            rect = fitz.Rect(
+                float(clip.x),
+                float(clip.y),
+                float(clip.x + clip.width),
+                float(clip.y + clip.height),
+            )
 
-            # Render the clipped region at higher resolution and embed as an image
-            pix = page.get_pixmap(matrix=matrix, clip=rect, alpha=False)
-            img_bytes = pix.tobytes("png")
-
-            page_width = rect.width
-            page_height = rect.height
-            new_page = new_doc.new_page(width=page_width, height=page_height)
-            new_page.insert_image(new_page.rect, stream=img_bytes)
+            # Create a new page sized to the clip and place the clipped content directly (vector-safe)
+            new_page = new_doc.new_page(width=rect.width, height=rect.height)
+            new_page.show_pdf_page(new_page.rect, doc, page_index, clip=rect)
 
         output = io.BytesIO()
         new_doc.save(output)
