@@ -14,6 +14,7 @@ jedi==0.19.2
 matplotlib-inline==0.2.1
 packaging==25.0
 parso==0.8.5
+pdf2image==1.17.0
 pexpect==4.9.0
 pillow==12.0.0
 pluggy==1.6.0
@@ -26,6 +27,7 @@ PyJWT==2.10.1
 PyMuPDF==1.26.7
 pytest==9.0.2
 pytest-django==4.11.1
+requests==2.31.0
 sqlparse==0.5.5
 stack-data==0.6.3
 traitlets==5.14.3
