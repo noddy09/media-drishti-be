@@ -61,4 +61,6 @@ class DownloadViewSet(viewsets.ModelViewSet):
         doc.close()
         output.seek(0)
 
+        Download.objects.create(upload=upload, downloaded_by=request.user.username, tenant='default')
+
         return FileResponse(output, as_attachment=True, filename='cropped_clips.pdf')
