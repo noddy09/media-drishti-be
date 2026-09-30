@@ -4,6 +4,7 @@ from rest_framework.exceptions import PermissionDenied
 from .models import Tag, ClipTag, ClientTag
 from .serializers import TagSerializer, ClipTagSerializer, ClientTagSerializer
 from backend.auditlog.models import AuditLog
+from backend.users.roles import is_staff_or_admin
 
 # Create your views here.
 
@@ -15,7 +16,7 @@ class TagViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Clients only see tags mapped to them; staff/superusers see all
         user = self.request.user
-        if user.is_staff or user.is_superuser:
+        if is_staff_or_admin(user):
             return super().get_queryset()
         allowed_tag_ids = ClientTag.objects.filter(client=user).values_list('tag_id', flat=True)
         return Tag.objects.filter(id__in=allowed_tag_ids)

@@ -12,6 +12,7 @@ import fitz  # PyMuPDF
 import io
 from PIL import Image, ImageDraw, ImageFont
 from pdf2image import convert_from_path
+from backend.users.roles import is_staff_or_admin
 
 # Create your views here.
 
@@ -60,7 +61,7 @@ class ClipViewSet(viewsets.ModelViewSet):
             manual_entries = ManualEntry.objects.all()
         
         # For clients, filter clips to only those with tags assigned to them
-        if not request.user.is_staff and not request.user.is_superuser:
+        if not is_staff_or_admin(request.user):
             allowed_tag_ids = ClientTag.objects.filter(client=request.user).values_list('tag_id', flat=True)
             clips = clips.filter(clip_tags__tag_id__in=allowed_tag_ids).distinct()
             manual_entries = manual_entries.filter(tags__id__in=allowed_tag_ids).distinct()
