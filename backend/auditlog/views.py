@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
 from .models import AuditLog
 from .serializers import AuditLogSerializer
+from backend.users.roles import is_staff_or_admin
 
 class AuditLogViewSet(viewsets.ModelViewSet):
     queryset = AuditLog.objects.all()
@@ -9,6 +10,6 @@ class AuditLogViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_destroy(self, instance):
-        if self.request.user.role != 'admin':
+        if not is_staff_or_admin(self.request.user):
             raise PermissionDenied("Only admins can delete audit logs.")
         instance.delete()
