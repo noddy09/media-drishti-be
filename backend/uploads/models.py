@@ -22,5 +22,8 @@ class Upload(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255, blank=True, null=True, default="test")  # User-provided name
 
+    class Meta:
+        ordering = ['-uploaded_at']
+
     def __str__(self):
         return f"{self.name or self.file.name} ({self.file_type})"
