@@ -15,6 +15,17 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'is_active', 'is_staff', 'is_superuser', 'password', 'role', 'client_tags']
         read_only_fields = ['id', 'is_superuser', 'client_tags']
 
+    def _apply_role(self, user, role):
+        if role == 'admin':
+            user.is_staff = True
+            user.is_superuser = True
+        elif role == 'employee':
+            user.is_staff = True
+            user.is_superuser = False
+        elif role == 'client':
+            user.is_staff = False
+            user.is_superuser = False
+
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         role = validated_data.pop('role', None)
@@ -22,14 +33,18 @@ class UserSerializer(serializers.ModelSerializer):
         if password:
             user.set_password(password)
         if role:
-            if role == 'admin':
-                user.is_staff = True
-                user.is_superuser = True
-            elif role == 'employee':
-                user.is_staff = True
-            elif role == 'client':
-                user.is_staff = False
-            # Add more role logic as needed
+            self._apply_role(user, role)
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        role = validated_data.pop('role', None)
+        user = super().update(instance, validated_data)
+        if password:
+            user.set_password(password)
+        if role:
+            self._apply_role(user, role)
         user.save()
         return user
 
