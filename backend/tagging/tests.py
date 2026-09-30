@@ -16,13 +16,13 @@ class TagVisibilityTests(APITestCase):
         self.client.force_authenticate(self.client_user)
         resp = self.client.get('/api/tagging/tags/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        names = [t['name'] for t in resp.data]
+        names = [t['name'] for t in resp.data['results']]
         self.assertIn('visible', names)
         self.assertNotIn('hidden', names)
 
     def test_admin_sees_all_tags(self):
         self.client.force_authenticate(self.admin)
         resp = self.client.get('/api/tagging/tags/')
-        names = [t['name'] for t in resp.data]
+        names = [t['name'] for t in resp.data['results']]
         self.assertIn('visible', names)
         self.assertIn('hidden', names)
