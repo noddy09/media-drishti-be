@@ -22,9 +22,21 @@ from rest_framework_simplejwt.views import (
 from backend.users.token import CustomTokenObtainPairView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.db import connection
+from django.http import JsonResponse
+
+
+def health_check(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+        return JsonResponse({'status': 'ok'})
+    except Exception as exc:
+        return JsonResponse({'status': 'error', 'detail': str(exc)}, status=503)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/health/', health_check, name='health_check'),
     path('api/uploads/', include('backend.uploads.urls')),
     path('api/clipping/', include('backend.clipping.urls')),
     path('api/tagging/', include('backend.tagging.urls')),
