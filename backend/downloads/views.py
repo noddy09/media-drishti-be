@@ -17,6 +17,12 @@ class DownloadViewSet(viewsets.ModelViewSet):
     serializer_class = DownloadSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if is_staff_or_admin(user):
+            return Download.objects.all()
+        return Download.objects.filter(downloaded_by=user.username)
+
     def retrieve(self, request, *args, **kwargs):
         download = self.get_object()
         upload = download.upload
