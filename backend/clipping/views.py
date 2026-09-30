@@ -51,6 +51,27 @@ class ClipViewSet(viewsets.ModelViewSet):
         instance.delete()
 
     @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        if not is_staff_or_admin(request.user):
+            return Response({'detail': 'Permission denied.'}, status=403)
+
+        clip_ids = request.data.get('clip_ids')
+        if not clip_ids:
+            return Response({'detail': 'clip_ids is required.'}, status=400)
+
+        clips = Clip.objects.filter(id__in=clip_ids)
+        deleted_count = clips.count()
+        clips.delete()
+
+        AuditLog.objects.create(
+            user=request.user,
+            action='clip',
+            description=f"Bulk deleted {deleted_count} clip(s)",
+            tenant='default',
+        )
+        return Response({'deleted_count': deleted_count}, status=200)
+
+    @action(detail=False, methods=['post'])
     def export_clips(self, request):
         tag_ids = request.data.get('tag_ids', [])
         if tag_ids:
