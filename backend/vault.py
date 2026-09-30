@@ -17,7 +17,7 @@ def load_secrets_from_vault():
         return
 
     mount_point = os.environ.get('VAULT_KV_MOUNT', 'kv')
-    secret_path = os.environ.get('VAULT_SECRET_PATH', 'media-drishti/config')
+    secret_path = os.environ.get('VAULT_SECRET_PATH', 'media-drishti/backend')
 
     try:
         import hvac
